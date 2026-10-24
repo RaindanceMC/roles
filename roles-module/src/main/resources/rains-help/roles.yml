@@ -1,0 +1,74 @@
+id: roles
+title: Roles
+summary: Pick a role — cook, builder, miner… — for shop discounts and small bonuses that grow the longer you keep it.
+intro: |
+  Everybody has a calling. Mine is pointing at things and saying "that one pays less". Pick yours with {run:/role} — one at a time, so choose with a little thought.
+icon: ENCHANTING_TABLE
+category: Progress & rewards
+order: 30
+module: roles
+aliases: [role, job, jobs, cook, farmer, builder, explorer, miner, mage, hunter, engineer, biologist, perks, class]
+keywords: [discount, shop, price, ability, bonus, rent, buy, change, profile, hunger, fortune, reach, speed]
+commands: [role]
+related: [shop]
+sections:
+  - question: What are roles?
+    title: What roles are
+    text: |
+      A role is something you are good at. It does two things: {if:roles:perks.enabled}it makes the shop cheaper for what the role works with (and pays a bit more when you sell what it produces){else}(shop discounts are switched off on this server){/if}, and {if:roles:abilities}it makes you a little better at something in the game — a Cook gets extra crops, a Miner's pickaxe lasts longer{else}(in-game abilities are switched off here){/if}.
+      The roles themselves — which ones exist, what they cover — are the server's own list; {run:/role} shows it.
+  - question: How do I pick a role?
+    title: Picking one
+    text: |
+      {run:/role} opens the list. Hover a role to see what it covers, then click it. Or type {cmd:/role <name>}. You are told in chat, {if:roles:announce}and so is everybody else — a role is a thing to be proud of{else}quietly, nobody else is told{/if}.
+      {if:roles:remind-on-join}Forgot? A few seconds after you join, I will nudge you until you have one.{/if}
+  - question: Can I change my role?
+    title: Changing roles
+    text: |
+      {if:roles:change-every-hours > 0}Your first role you may pick whenever. After that you must keep a role for {setting:roles:change-every-hours|hours} before taking another. The menu and {run:/role info} show how long is left. Picking the role you already have is simply refused.{else}Whenever you like — there is no waiting time on this server.{/if}
+  - question: What do perks do?
+    title: Shop perks
+    when: roles:perks.enabled
+    text: |
+      Perks change shop prices: a percentage off when you <i>buy</i> certain things, or a percentage more when you <i>sell</i> certain things — "food, smokers and campfires", "ores and what they give". Hover your role in {run:/role} for its exact list. Selling never pays more than the same item costs <i>you</i> to buy, so no perk can be played against the shop.
+      Where two of your role's perks cover the same item, the better one counts.
+  - question: Why are my perks smaller than listed?
+    title: Perks grow
+    when: roles:perks.enabled && roles:perks.full-after-days > 0
+    text: |
+      A new role starts at {setting:roles:perks.start-share|percent} of its full size and grows steadily to 100% over {setting:roles:perks.full-after-days|days} of keeping it. So swapping roles to chase a discount just starts each one small again. {run:/role} shows your current strength and how long it takes to become full. Abilities grow the same way.
+  - question: What are abilities?
+    title: Abilities
+    when: roles:abilities
+    text: |
+      Small things your role does better in the game, each with a modest ceiling. Depending on the role: slower hunger, a chance of one more crop or more food from animals, a chance of one more drop from <i>natural</i> ore (ore you placed yourself brings no luck), less fall damage, a little more speed, longer reach, tools that sometimes take no wear, more experience, more damage to monsters (never to players) and faster minecarts.
+      Hover your role for the exact ones. They apply wherever you are on the network and update the moment you change role.
+  - question: Can I buy or rent a role?
+    title: Buying & renting
+    when: roles:sell-roles
+    text: |
+      Some roles are not free — the server can put a price or a monthly rent on them. A role with a price or rent is closed until you buy or rent it; the menu shows what it costs (click to buy, right-click to rent where both exist).
+      <white>Buy:</white> {cmd:/role buy <role>} — one payment, yours for good.
+      <white>Rent:</white> {cmd:/role rent <role>} — paid now and then every 30 days of real time, also while you are offline (collected when you are next on, or by the server's regular check). You are warned three days before it is due. If the rent cannot be paid, the rental ends and you lose the role; take it again with {cmd:/role rent <role>}.
+      <white>Stop renting:</white> {cmd:/role cancel <role>} — ends the rental at once, no refund. If it was your role, you have none afterwards.
+      Free roles stay open to everybody, always. Buying a role only unlocks it; you still choose it, and the waiting time applies.
+  - question: How do I see my role's details?
+    title: Your role & profiles
+    text: |
+      {run:/role info} lists your role and every perk and ability at its <i>current</i> strength with the full size in brackets, and whether you may change now. Your role is also on your profile (click your name in chat) — click it there to open the list.
+  - question: What can staff do with roles?
+    title: Staff tools
+    permission: rainsroles.admin
+    text: |
+      {cmd:/role set <player> <role|none>} gives or clears somebody's role (their waiting time starts as if they had chosen it; they are told). {cmd:/role reset <player>} lets them change at once. {cmd:/role info <player>} shows theirs — also for players who are offline. {cmd:/role reload} re-reads roles.yml and lists problems found in it.
+  - question: Can staff try roles without waiting?
+    title: Bypass
+    permission: rainsroles.bypass
+    text: |
+      {run:/role bypass} switches the bypass on or off for you: you change role without waiting and skip prices, and nobody is told when you do. It is not saved — leaving the server turns it off.
+  - question: What can staff set up?
+    title: Settings & roles.yml
+    permission: rainscore.settings
+    text: |
+      {run:/settings} has a page "Roles". Today: shop perks {setting:roles:perks.enabled|onoff}, abilities {setting:roles:abilities|onoff}, wait between changes {setting:roles:change-every-hours|hours}, announcements {setting:roles:announce|onoff}, join reminder {setting:roles:remind-on-join|onoff}, new roles start at {setting:roles:perks.start-share|percent}, perks full after {setting:roles:perks.full-after-days|days}, selling roles {setting:roles:sell-roles|onoff}.
+      The roles themselves live in <white>roles.yml</white>: title, icon, colour, description, perks (percent, shop drawers, items, wildcards, exceptions), abilities, price and rent-per-month. The file explains every key; delete it to get the shipped roles back.
