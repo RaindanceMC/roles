@@ -33,7 +33,7 @@ import java.util.List;
  */
 public final class RolesModule implements FlexModule {
 
-    private static final ModuleInfo INFO = ModuleInfo.of("roles", "Roles", "0.9.0")
+    private static final ModuleInfo INFO = ModuleInfo.of("roles", "Roles", "0.10.0")
             .describedAs("Pick a role with /role — a cook, a builder, an explorer… — pay less in the shop for what it works with, and do it a little better in the game")
             .by("Raindancer118");
 
@@ -120,6 +120,18 @@ public final class RolesModule implements FlexModule {
         RoleProfileButton profile = new RoleProfileButton(() -> services);
         ProfileExtensions.register(profile);
         context.closeWith(() -> ProfileExtensions.unregister(profile));
+        // Screens for /screen — Core 2.10.0; on an older Core there are simply none.
+        try {
+            var screens = context.core().screens();
+            if (screens != null) {
+                new de.raindancer.modules.roles.service.RoleScreens(service, context.plugin().getServer(),
+                        id -> context.core().vanish().isVanished(id)).register(screens, context.plugin());
+                context.closeWith(() -> de.raindancer.modules.roles.service.RoleScreens.KINDS
+                        .forEach(screens::unregister));
+            }
+        } catch (LinkageError olderCore) {
+            context.log().info("RainsCore is older than 2.10.0: no role screens until it is updated.");
+        }
         RolesCommands.ready(services);
         context.log().info("Roles are up: {} role(s), {} player(s) have one.", roles, choices.count());
     }
