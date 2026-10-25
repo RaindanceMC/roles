@@ -6,6 +6,7 @@ import de.raindancer.core.world.time.Times;
 import de.raindancer.modules.roles.RolesServices;
 import de.raindancer.modules.roles.model.Role;
 import de.raindancer.modules.roles.screen.RoleMenu;
+import de.raindancer.modules.roles.util.OffThread;
 import de.raindancer.modules.roles.util.PermissionNodes;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.OfflinePlayer;
@@ -60,7 +61,7 @@ public final class RoleCommand implements IRolesCommand {
                 }
                 asPlayer(live, sender).ifPresent(player -> {
                     if (first.equals("cancel")) {
-                        live.purchases().cancel(player, role.get());
+                        OffThread.run(live, () -> live.purchases().cancel(player, role.get()));
                     } else {
                         new RoleMenu(live, player, null).confirmPurchase(role.get(), first.equals("rent"));
                     }
@@ -73,24 +74,24 @@ public final class RoleCommand implements IRolesCommand {
                     live.messages().send(sender, "roles.unknown", "name", args[2]);
                     return;
                 }
-                if (!live.roles().set(target.getUniqueId(), role)) {
-                    live.messages().send(sender, "roles.not-saved");
-                    return;
-                }
                 String name = PlayerTargets.shownName(target);
-                if (role.isEmpty()) {
-                    live.messages().send(sender, "roles.cleared", "player", name);
-                } else {
-                    live.messages().send(sender, "roles.set", "player", name, "article", role.get().article(), "role", new Markup(role.get().coloured()));
-                    Player online = target.getPlayer();
-                    if (online != null && !online.equals(sender)) {
-                        live.messages().send(online, "roles.set-you", "article", role.get().article(), "role", new Markup(role.get().coloured()));
+                OffThread.then(live, sender, () -> live.roles().set(target.getUniqueId(), role), saved -> {
+                    if (!saved) {
+                        live.messages().send(sender, "roles.not-saved");
+                    } else if (role.isEmpty()) {
+                        live.messages().send(sender, "roles.cleared", "player", name);
+                    } else {
+                        live.messages().send(sender, "roles.set", "player", name, "article", role.get().article(), "role", new Markup(role.get().coloured()));
+                        Player online = target.getPlayer();
+                        if (online != null && !online.equals(sender)) {
+                            live.messages().send(online, "roles.set-you", "article", role.get().article(), "role", new Markup(role.get().coloured()));
+                        }
                     }
-                }
+                });
             });
-            case "reset" -> staff(live, sender, args, 2).ifPresent(target -> live.messages().send(sender,
-                    live.roles().endWait(target.getUniqueId()) ? "roles.reset" : "roles.not-saved",
-                    "player", PlayerTargets.shownName(target)));
+            case "reset" -> staff(live, sender, args, 2).ifPresent(target -> OffThread.then(live, sender,
+                    () -> live.roles().endWait(target.getUniqueId()), done -> live.messages().send(sender,
+                            done ? "roles.reset" : "roles.not-saved", "player", PlayerTargets.shownName(target))));
             case "reload" -> {
                 if (!sender.hasPermission(PermissionNodes.ADMIN)) {
                     live.messages().send(sender, "roles.usage");
@@ -105,7 +106,7 @@ public final class RoleCommand implements IRolesCommand {
                     live.messages().send(sender, "roles.unknown", "name", args[0]);
                     return;
                 }
-                asPlayer(live, sender).ifPresent(player -> live.roles().choose(player, role.get()));
+                asPlayer(live, sender).ifPresent(player -> OffThread.run(live, () -> live.roles().choose(player, role.get())));
             }
         }
     }

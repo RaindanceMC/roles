@@ -1,5 +1,6 @@
 package de.raindancer.modules.roles.screen;
 
+import de.raindancer.core.platform.util.Scheduling;
 import de.raindancer.core.ui.menu.Icons;
 import de.raindancer.core.ui.menu.Menu;
 import de.raindancer.core.data.settings.SettingsMenu;
@@ -13,6 +14,7 @@ import de.raindancer.modules.roles.model.Role;
 import de.raindancer.modules.roles.model.Ownership;
 import de.raindancer.modules.roles.service.RolePurchase;
 import de.raindancer.core.ui.text.Markup;
+import de.raindancer.modules.roles.util.OffThread;
 import de.raindancer.modules.roles.util.PermissionNodes;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -207,12 +209,14 @@ public final class RoleMenu extends PaginatedMenu<Role> implements IRolesScreen 
                         : "<gray>It is yours for good.");
         new ConfirmScreen(viewer, services.brand(), this, "<dark_gray>" + (rent ? "Rent " : "Buy ") + role.coloured() + "<dark_gray>?",
                 consequences, "<dark_gray>Nothing is charged if you say no.", () -> {
-            if (rent) {
-                services.purchases().rent(viewer, role);
-            } else {
-                services.purchases().buy(viewer, role);
-            }
-            open();
+            OffThread.run(services, () -> {
+                if (rent) {
+                    services.purchases().rent(viewer, role);
+                } else {
+                    services.purchases().buy(viewer, role);
+                }
+                Scheduling.entity(services.plugin(), viewer, this::open);
+            });
         }).open();
     }
 
@@ -226,7 +230,7 @@ public final class RoleMenu extends PaginatedMenu<Role> implements IRolesScreen 
         ChangeVerdict verdict = services.roles().verdict(viewer.getUniqueId(), role);
         if (!verdict.allowed()) {
             // Says why: it is the same role, or how long is left.
-            services.roles().choose(viewer, role);
+            OffThread.run(services, () -> services.roles().choose(viewer, role));
             return;
         }
         List<String> consequences = new ArrayList<>();
@@ -238,10 +242,10 @@ public final class RoleMenu extends PaginatedMenu<Role> implements IRolesScreen 
                 ? "<dark_gray>You can change again whenever you like."
                 : "<dark_gray>You can change again in " + Times.describe(services.roles().holdsFor()) + ".";
         new ConfirmScreen(viewer, services.brand(), this, "<dark_gray>Become " + role.article() + " " + role.coloured() + "<dark_gray>?",
-                consequences, closing, () -> {
+                consequences, closing, () -> OffThread.run(services, () -> {
             services.roles().choose(viewer, role);
-            open();
-        }).open();
+            Scheduling.entity(services.plugin(), viewer, this::open);
+        })).open();
     }
 
     private static Material icon(String name) {

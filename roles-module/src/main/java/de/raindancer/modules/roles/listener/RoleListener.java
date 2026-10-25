@@ -30,15 +30,18 @@ public final class RoleListener implements IRolesListener {
 
     /** Takes rent that has come due and says what happened; the one place rent is collected from. */
     public static void collectRent(RolesServices services, Player player) {
-        for (RoleShop.RentEvent event : services.shop().collect(player.getUniqueId())) {
-            if (event.paid()) {
-                services.messages().send(player, "roles.rent-paid", "role", new Markup(event.role().coloured()),
-                        "amount", Fees.format(event.amount()));
-            } else {
-                services.messages().send(player, "roles.rent-lapsed", "role", new Markup(event.role().coloured()),
-                        "id", event.role().id());
+        // Collecting writes the documents and takes the money: off the server's threads.
+        Scheduling.async(services.plugin(), () -> {
+            for (RoleShop.RentEvent event : services.shop().collect(player.getUniqueId())) {
+                if (event.paid()) {
+                    services.messages().send(player, "roles.rent-paid", "role", new Markup(event.role().coloured()),
+                            "amount", Fees.format(event.amount()));
+                } else {
+                    services.messages().send(player, "roles.rent-lapsed", "role", new Markup(event.role().coloured()),
+                            "id", event.role().id());
+                }
             }
-        }
+        });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
